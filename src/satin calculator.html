@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a3a52 0%, #3d6b85 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #3d6b85;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #6fa8a6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(111, 168, 166, 0.1);
+        }
+
+        .unit {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #3d6b85 0%, #6fa8a6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(61, 107, 133, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #6fa8a6 0%, #3d6b85 100%);
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-label {
+            color: white;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .result-value {
+            color: white;
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .result-unit {
+            color: white;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .info-box {
+            background: #e8f4f3;
+            border-left: 4px solid #6fa8a6;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .result-value {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>📏 Roll Calculator</h1>
+        <p class="subtitle">Calculate rolls needed for your order</p>
+
+        <div class="input-group">
+            <label for="quantity">Order Quantity</label>
+            <input type="number" id="quantity" placeholder="e.g., 150000" min="0" step="1">
+            <div class="unit">Total pieces in your order</div>
+        </div>
+
+        <div class="input-group">
+            <label for="length">Unit Length</label>
+            <input type="number" id="length" placeholder="e.g., 75" min="0" step="0.01">
+            <div class="unit">Length per piece (in mm)</div>
+        </div>
+
+        <button onclick="calculate()">Calculate Rolls</button>
+
+        <div class="result" id="result">
+            <div class="result-label">Rolls Needed</div>
+            <div class="result-value" id="rollsValue">0</div>
+            <div class="result-unit">rolls</div>
+        </div>
+
+        <div class="info-box">
+            <strong>📌 Note:</strong> Each roll = 200 meters (200,000 mm)
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const qty = parseFloat(document.getElementById('quantity').value);
+            const length = parseFloat(document.getElementById('length').value);
+
+            if (isNaN(qty) || isNaN(length) || qty <= 0 || length <= 0) {
+                alert('Please enter valid positive numbers for both fields.');
+                return;
+            }
+
+            const totalLengthMm = qty * length;
+            const rollLengthMm = 200000;
+            const rollsNeeded = totalLengthMm / rollLengthMm;
+
+            document.getElementById('rollsValue').textContent = rollsNeeded.toFixed(2);
+            document.getElementById('result').classList.add('show');
+        }
+
+        document.getElementById('quantity').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calculate();
+        });
+
+        document.getElementById('length').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') calculate();
+        });
+    </script>
+</body>
+</html>
