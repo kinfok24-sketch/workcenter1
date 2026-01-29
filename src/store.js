@@ -145,6 +145,24 @@ export const store = {
         return this.data.cylinders || [];
     },
 
+    // --- Rules ---
+    addRule(title, description, image = null) {
+        if (!this.data.rules) this.data.rules = [];
+        const id = crypto.randomUUID();
+        this.data.rules.push({ id, title, description, image, createdAt: new Date().toISOString() });
+        this.save();
+    },
+
+    removeRule(id) {
+        if (!this.data.rules) return;
+        this.data.rules = this.data.rules.filter(r => r.id !== id);
+        this.save();
+    },
+
+    getRules() {
+        return this.data.rules || [];
+    },
+
     // Legacy method shim for compatibility (though we'll update UI)
     markAttendance(employeeId, dateStr, statusId) {
         // If statusId is null, clear

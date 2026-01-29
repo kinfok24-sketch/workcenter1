@@ -34,6 +34,8 @@ function setupGlobalListeners() {
         renderCalculator();
       } else if (page === 'cylinders') {
         renderCylinders();
+      } else if (page === 'rules') {
+        renderRules();
       }
       return;
     }
@@ -55,6 +57,22 @@ function setupGlobalListeners() {
       if (confirm('Delete this cylinder?')) {
         store.removeCylinder(delCylBtn.dataset.id);
         renderCylinders();
+      }
+      return;
+    }
+
+    // 2.7 Add Rule
+    if (e.target.closest('#add-rule-btn')) {
+      openAddRuleModal();
+      return;
+    }
+
+    // 2.8 Delete Rule
+    const delRuleBtn = e.target.closest('.rule-delete-btn');
+    if (delRuleBtn) {
+      if (confirm('Delete this rule?')) {
+        store.removeRule(delRuleBtn.dataset.id);
+        renderRules();
       }
       return;
     }
@@ -148,7 +166,9 @@ function renderApp() {
     renderCalculator();
     return;
   } else if (activeNav && activeNav.dataset.page === 'cylinders') {
-    renderCylinders();
+    return;
+  } else if (activeNav && activeNav.dataset.page === 'rules') {
+    renderRules();
     return;
   }
 
@@ -670,15 +690,22 @@ function renderCylinders() {
 
   container.innerHTML = `
        <div class="header">
-          <h1 class="page-title">Cylinder List</h1>
-          <div style="display:flex; gap:12px;">
-             <button class="btn" id="export-pdf-btn">📄 Export to PDF</button>
-             <button class="btn btn-primary" id="add-cylinder-btn"><span>+</span> Add Cylinder</button>
+          <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <h1 class="page-title">Cylinder List</h1>
+                  <div style="display:flex; gap:12px;">
+                     <button class="btn" id="export-pdf-btn">📄 Export to PDF</button>
+                     <button class="btn btn-primary" id="add-cylinder-btn"><span>+</span> Add Cylinder</button>
+                  </div>
+              </div>
+              <input type="text" id="cylinder-search" placeholder="🔍 Enter size to highlight (e.g. 100) - Finds matches +/- 10mm" 
+                     style="padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; width: 100%; font-size: 1rem;">
           </div>
        </div>
        
-       ${renderTable('Xin Hu', xinHu)}
-       ${renderTable('Jingda', jingda)}
+       <div id="cyl-table-xinhu">${renderTable('Xin Hu', xinHu)}</div>
+       <div class="page-break"></div>
+       <div id="cyl-table-jingda">${renderTable('Jingda', jingda)}</div>
        
        <div style="margin-top:40px;"></div> <!-- spacer -->
     `;
@@ -686,6 +713,28 @@ function renderCylinders() {
   // Attach Export Listener
   getEl('export-pdf-btn').onclick = () => {
     window.print();
+  };
+
+  // Attach Search Listener
+  const searchInput = getEl('cylinder-search');
+  searchInput.onkeyup = (e) => {
+    const val = parseFloat(e.target.value);
+    const cells = container.querySelectorAll('tbody td');
+
+    // Reset
+    cells.forEach(td => td.classList.remove('highlight-match'));
+
+    if (!isNaN(val)) {
+      cells.forEach(td => {
+        const text = td.innerText;
+        const cellVal = parseFloat(text);
+
+        // Highlight logic: +/- 10mm margin, ignoring T.no and small integers (likely counts/gears)
+        if (!isNaN(cellVal) && !text.includes('T') && Math.abs(cellVal - val) <= 10) {
+          td.classList.add('highlight-match');
+        }
+      });
+    }
   };
 }
 
@@ -741,10 +790,10 @@ function openAddCylinderModal() {
   const save = () => {
     const brand = document.querySelector('input[name="brand"]:checked').value;
     const tNo = getEl('cyl-tno').value;
-    const count = getEl('cyl-count').value;
-    const gears = getEl('cyl-gears').value;
-    const size = getEl('cyl-size').value;
-    const dist = getEl('cyl-dist').value;
+    const count = parseInt(getEl('cyl-count').value) || 0;
+    const gears = parseInt(getEl('cyl-gears').value) || 0;
+    const size = parseFloat(getEl('cyl-size').value) || 0;
+    const dist = parseFloat(getEl('cyl-dist').value) || 0;
 
     if (tNo && count && gears && size) {
       store.addCylinder(brand, tNo, gears, count, size, dist);
@@ -754,6 +803,126 @@ function openAddCylinderModal() {
       alert('Please fill in at least T.no, Count, Gears, and Size.');
     }
   };
-
   getEl('save-cyl-btn').onclick = save;
+}
+
+function renderRules() {
+  const container = getEl('main-content');
+  if (!container) return;
+
+  const rules = store.getRules();
+
+  container.innerHTML = `
+        <div class="header">
+           <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
+               <div style="display:flex; justify-content:space-between; align-items:center;">
+                   <h1 class="page-title">Rule Book</h1>
+                   <button class="btn btn-primary" id="add-rule-btn"><span>+</span> Add New Rule</button>
+               </div>
+               <input type="text" id="rule-search" placeholder="🔍 Search rules..." 
+                      style="padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; width: 100%; font-size: 1rem;">
+           </div>
+        </div>
+
+        <div class="rules-grid" id="rules-container">
+            <!-- Rules injected here -->
+        </div>
+        
+        <div style="margin-top:40px;"></div>
+    `;
+
+  const grid = getEl('rules-container');
+
+  const renderGrid = (items) => {
+    if (items.length === 0) {
+      grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">No rules found.</div>`;
+      return;
+    }
+
+    grid.innerHTML = items.map(rule => `
+            <div class="rule-card">
+                <button class="rule-delete-btn" data-id="${rule.id}" title="Delete Rule">❌</button>
+                <h3 class="rule-title">${rule.title}</h3>
+                <div class="rule-desc">${rule.description}</div>
+                ${rule.image ? `<img src="${rule.image}" class="rule-image" alt="Attachment">` : ''}
+            </div>
+        `).join('');
+  };
+
+  renderGrid(rules);
+
+  // Search Logic
+  getEl('rule-search').onkeyup = (e) => {
+    const term = e.target.value.toLowerCase();
+    const filtered = rules.filter(r =>
+      r.title.toLowerCase().includes(term) ||
+      r.description.toLowerCase().includes(term)
+    );
+    renderGrid(filtered);
+  };
+}
+
+function openAddRuleModal() {
+  const content = getEl('modal-content');
+  if (!content) return;
+
+  content.innerHTML = `
+       <h2 style="margin-top:0; margin-bottom: 24px;">Add New Rule</h2>
+       
+       <div class="form-group">
+          <label>Rule Title</label>
+          <input type="text" id="rule-title" placeholder="e.g. Stop Loss Strategy" autofocus style="width: 100%;">
+       </div>
+
+       <div class="form-group">
+          <label>Description / Details</label>
+          <textarea id="rule-desc" placeholder="Enter the rule details..." rows="6" style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-family: inherit; resize: vertical;"></textarea>
+       </div>
+
+       <div class="form-group" style="padding: 12px; border: 2px dashed var(--border-color); border-radius: 8px; text-align: center;">
+          <label style="cursor: pointer; display: block; color: var(--accent-color); font-weight: 600;">
+              📷 Attach Image (Optional)
+              <input type="file" id="rule-image" accept="image/*" style="display: none;">
+          </label>
+          <div id="file-name" style="margin-top: 8px; font-size: 0.9rem; color: var(--text-secondary);">No file selected</div>
+       </div>
+
+       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+         <button class="btn" id="cancel-btn">Cancel</button>
+         <button class="btn btn-primary" id="save-rule-btn">Save Rule</button>
+       </div>
+    `;
+  getEl('modal-overlay').classList.add('open');
+
+  getEl('rule-image').onchange = (e) => {
+    const file = e.target.files[0];
+    getEl('file-name').innerText = file ? file.name : 'No file selected';
+  };
+
+  const save = () => {
+    const title = getEl('rule-title').value;
+    const desc = getEl('rule-desc').value;
+    const file = getEl('rule-image').files[0];
+
+    if (!title || !desc) {
+      alert('Please enter both a title and description.');
+      return;
+    }
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target.result;
+        store.addRule(title, desc, base64);
+        closeModal();
+        renderRules();
+      };
+      reader.readAsDataURL(file);
+    } else {
+      store.addRule(title, desc, null);
+      closeModal();
+      renderRules();
+    }
+  };
+  getEl('save-rule-btn').onclick = save;
 }

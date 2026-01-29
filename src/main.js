@@ -10,6 +10,7 @@ document.querySelector('#app').innerHTML = `
     <div class="nav-item active" data-page="dashboard">Tracker</div>
     <div class="nav-item" data-page="calculator">Satin Calculator</div>
     <div class="nav-item" data-page="cylinders">Cylinder List</div>
+    <div class="nav-item" data-page="rules">Rule Book</div>
   </div>
   <div class="main-content" id="main-content">
     <!-- Dynamic Content -->
