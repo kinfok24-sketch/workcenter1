@@ -20,6 +20,11 @@ document.querySelector('#app').innerHTML = `
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal" id="modal-content"></div>
   </div>
+
+  <!-- Lightbox Portal -->
+  <div class="lightbox-overlay" id="lightbox-overlay">
+    <div class="lightbox-container" id="lightbox-content"></div>
+  </div>
 `;
 
 initUI();

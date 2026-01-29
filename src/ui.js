@@ -100,6 +100,14 @@ function setupGlobalListeners() {
       return;
     }
 
+    // 4.5 Rule Card (Lightbox)
+    const ruleCard = e.target.closest('.rule-card');
+    if (ruleCard && !e.target.closest('.rule-delete-btn')) {
+      const ruleId = ruleCard.querySelector('.rule-delete-btn').dataset.id;
+      openRuleLightbox(ruleId);
+      return;
+    }
+
     // 5. Back Button
     if (e.target.closest('#back-btn')) {
       selectedEmployeeId = null;
@@ -147,6 +155,13 @@ function setupGlobalListeners() {
     // 9. Modal Close
     if (e.target === modalOverlay || e.target.closest('#cancel-btn') || e.target.closest('#close-modal-btn')) {
       closeModal();
+      return;
+    }
+
+    // 10. Lightbox Close
+    const lightboxOverlay = getEl('lightbox-overlay');
+    if (e.target === lightboxOverlay || e.target.closest('#close-lightbox-btn')) {
+      if (lightboxOverlay) lightboxOverlay.classList.remove('open');
       return;
     }
   });
@@ -925,4 +940,127 @@ function openAddRuleModal() {
     }
   };
   getEl('save-rule-btn').onclick = save;
+}
+
+function openRuleLightbox(ruleId) {
+  const rule = store.getRules().find(r => r.id === ruleId);
+  if (!rule) return;
+
+  const overlay = getEl('lightbox-overlay');
+  const container = getEl('lightbox-content');
+  if (!overlay || !container) return;
+
+  let zoomScale = 1;
+  let isDragging = false;
+  let startX, startY;
+  let translateX = 0, translateY = 0;
+
+  container.innerHTML = `
+    <div class="lightbox-header">
+      <h2 style="margin:0;">${rule.title}</h2>
+      <button class="close-lightbox" id="close-lightbox-btn">×</button>
+    </div>
+    <div class="lightbox-body">
+      <div class="lightbox-image-section">
+        ${rule.image ? `
+          <div class="zoom-wrapper" id="zoom-wrapper">
+            <img src="${rule.image}" class="zoomable-image" id="zoomable-image" draggable="false">
+          </div>
+          <div class="zoom-controls">
+            <button class="btn btn-icon" id="zoom-out-btn" style="width:32px; height:32px;">-</button>
+            <span id="zoom-level" style="font-weight:600; min-width:40px; text-align:center;">100%</span>
+            <button class="btn btn-icon" id="zoom-in-btn" style="width:32px; height:32px;">+</button>
+            <button class="btn btn-icon" id="zoom-reset-btn" style="width:32px; height:32px; margin-left:8px;">↺</button>
+          </div>
+        ` : `
+          <div style="color:var(--text-secondary); text-align:center;">
+             <div style="font-size: 3rem; margin-bottom: 16px;">🖼️</div>
+             No image attached to this rule.
+          </div>
+        `}
+      </div>
+      <div class="lightbox-details-section">
+        <h4 style="margin:0; color:var(--text-secondary); text-transform:uppercase; font-size:0.75rem; letter-spacing:0.05em;">Description</h4>
+        <div style="color:var(--text-primary); line-height:1.6; white-space:pre-wrap;">${rule.description}</div>
+        <div style="margin-top:auto; padding-top:24px; border-top:1px solid var(--border-color); color:var(--text-secondary); font-size:0.8rem;">
+          Created: ${new Date(rule.createdAt).toLocaleDateString()}
+        </div>
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+
+  if (rule.image) {
+    const img = getEl('zoomable-image');
+    const wrapper = getEl('zoom-wrapper');
+    const zoomLevelEl = getEl('zoom-level');
+
+    const updateTransform = () => {
+      img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
+      zoomLevelEl.innerText = `${Math.round(zoomScale * 100)}%`;
+      wrapper.style.cursor = zoomScale > 1 ? 'grab' : 'default';
+    };
+
+    const handleZoom = (delta) => {
+      const oldScale = zoomScale;
+      zoomScale = Math.min(Math.max(zoomScale + delta, 0.5), 5);
+      if (zoomScale === 1) {
+        translateX = 0;
+        translateY = 0;
+      }
+      updateTransform();
+    };
+
+    getEl('zoom-in-btn').onclick = () => handleZoom(0.25);
+    getEl('zoom-out-btn').onclick = () => handleZoom(-0.25);
+    getEl('zoom-reset-btn').onclick = () => {
+      zoomScale = 1;
+      translateX = 0;
+      translateY = 0;
+      updateTransform();
+    };
+
+    // Pan logic
+    wrapper.onmousedown = (e) => {
+      if (zoomScale <= 1) return;
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+      wrapper.style.cursor = 'grabbing';
+    };
+
+    window.onmousemove = (e) => {
+      if (!isDragging) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      updateTransform();
+    };
+
+    window.onmouseup = () => {
+      isDragging = false;
+      if (wrapper) wrapper.style.cursor = zoomScale > 1 ? 'grab' : 'default';
+    };
+
+    // Scroll to zoom
+    wrapper.onwheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      handleZoom(delta);
+    };
+
+    // Click to toggle zoom
+    wrapper.onclick = (e) => {
+      if (e.target.id === 'zoom-wrapper' || e.target.id === 'zoomable-image') {
+        if (zoomScale > 1) {
+          zoomScale = 1;
+          translateX = 0;
+          translateY = 0;
+        } else {
+          zoomScale = 2;
+        }
+        updateTransform();
+      }
+    };
+  }
 }
