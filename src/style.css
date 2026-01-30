@@ -522,7 +522,7 @@ button {
   background: white;
   padding: 8px 16px;
   border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 10;
 }
 
@@ -543,4 +543,113 @@ button {
 .close-lightbox:hover {
   background: #e2e8f0;
   transform: rotate(90deg);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  body {
+    /* Allow native scroll behavior */
+  }
+
+  /* Turn Sidebar into Bottom Navigation */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    padding: 8px;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    z-index: 1000;
+    justify-content: space-evenly;
+    background: var(--sidebar-bg);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    text-align: center;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .nav-item.active {
+    background-color: #e3f2fd;
+  }
+
+  /* Adjust Main Content */
+  .main-content {
+    padding: 16px;
+    padding-bottom: 90px;
+    /* Space for bottom nav */
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Stack Grids */
+  .dashboard-grid,
+  .rules-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Header Adjustments */
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    /* Full width items */
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Modal Adjustments */
+  .modal {
+    width: 90%;
+    max-width: 100%;
+    padding: 24px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  /* Table Scrolling */
+  .main-content table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Month View adjustments */
+  .month-view {
+    padding: 16px;
+  }
+
+  .calendar-day-header {
+    font-size: 0.7rem;
+  }
+
+  .day-cell {
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
 }
