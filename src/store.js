@@ -178,6 +178,27 @@ export const store = {
         this.save();
     },
 
+    // Data Migration
+    exportData() {
+        return JSON.stringify(this.data);
+    },
+
+    importData(jsonString) {
+        try {
+            const parsed = JSON.parse(jsonString);
+            if (!parsed.employees || !parsed.attendance) {
+                throw new Error('Invalid data format');
+            }
+            this.data = parsed;
+            this.save();
+            return true;
+        } catch (e) {
+            console.error('Import failed', e);
+            alert('Failed to import data: Invalid format.');
+            return false;
+        }
+    },
+
     save() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
     }
