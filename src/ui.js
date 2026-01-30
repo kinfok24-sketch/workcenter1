@@ -20,6 +20,39 @@ function setupGlobalListeners() {
   document.body.addEventListener('click', (e) => {
     const modalOverlay = getEl('modal-overlay');
 
+    // 0. Data Backup/Restore (Priority)
+    if (e.target.closest('#backup-btn')) {
+      const data = store.exportData();
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    if (e.target.closest('#restore-btn')) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = (ev) => {
+        const file = ev.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (readEv) => {
+          if (store.importData(readEv.target.result)) {
+            alert('Data restored successfully! The page will reload.');
+            window.location.reload();
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+      return;
+    }
+
     // 1. Navigation
     const navItem = e.target.closest('.nav-item');
     if (navItem) {
@@ -165,38 +198,6 @@ function setupGlobalListeners() {
       return;
     }
 
-    // 11. Data Backup/Restore
-    if (e.target.closest('#backup-btn')) {
-      const data = store.exportData();
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `attendance_backup_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      return;
-    }
-
-    if (e.target.closest('#restore-btn')) {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'application/json';
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (store.importData(e.target.result)) {
-            alert('Data restored successfully! The page will reload.');
-            window.location.reload();
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-      return;
-    }
   });
 }
 
